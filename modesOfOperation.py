@@ -1,11 +1,5 @@
-import string
-import sys
 import os
-import argparse
-
 from BozhuAES import AES
-
-args_g = 0
 
 BLOCK_SIZE = 16  # the AES block size
 KEY_SIZE = 16    # the AES key size
@@ -76,15 +70,48 @@ class ECBCipher():
 class OFBCipher():
 
     def __init__(self,aes):
-        self.aes = aes
+        self.aes = AES(bytes(key,'utf-8'))
     
-    def encrypt(self):
-        pass
+    def encrypt(self,plaintext):
+        plaintext = pkcsPadding(True,plaintext)
 
-    def decrypt(self):
-        pass
+        plaintext = blocks(plaintext,BLOCK_SIZE)
+        ciphertext = []
+        iv = os.urandom(16)
+        ciphertext.append(iv)
+
+        interim = self.aes.encrypt_block(ciphertext[0])
+        for block in plaintext:
+            int_temp = int.from_bytes(interim,'little')
+            int_block = int.from_bytes(block,'little')
+            int_enc = int_temp ^ int_block
+
+            ciphertext.append(int_enc.to_bytes(BLOCK_SIZE,'little'))
+            interim = self.aes.encrypt_block(interim)
+        return ciphertext
+
+    def decrypt(self,ciphertext):
+        ciphertext = blocks(ciphertext,BLOCK_SIZE)
+        ciphertext = list(ciphertext)[0]
+        plaintext = []
+        interim = self.aes.encrypt_block(ciphertext[0])
+
+        for block in ciphertext[1:]:
+            int_temp = int.from_bytes(interim,'little')
+            int_block = int.from_bytes(block,'little')
+            int_enc = int_temp ^ int_block
+
+            plaintext.append(int_enc.to_bytes(BLOCK_SIZE,'little'))
+            interim = self.aes.encrypt_block(interim)
+        
+        plaintext = delist(plaintext)
+        plaintext = pkcsPadding(False,plaintext)
+        return plaintext
 
 class CBCCipher():
+
+    def __init__(self,aes):
+        self.aes = AES(bytes(key,'utf-8'))
     
     def encrypt(self):
         pass
@@ -93,6 +120,9 @@ class CBCCipher():
         pass
 
 class CNTRCipher():
+
+    def __init__(self,aes):
+        self.aes = AES(bytes(key,'utf-8'))
     
     def encrypt(self):
         pass
@@ -105,8 +135,16 @@ if __name__ == "__main__":
     text = bytearray('go canes','utf-8')
 
     ecb = ECBCipher(key)
-    encrypted = ecb.encrypt(text)
+    ofb = OFBCipher(key)
+    #cbc = CBCCipher(key)
+    #cntr = CNTRCipher(key)
 
     print('-----Object Tests-----')
     print('--ECB Cipher--')
-    print(text == ecb.decrypt(encrypted))
+    print(text == ecb.decrypt(ecb.encrypt(text)))
+    print('--OFB Cipher--')
+    print(text == ofb.decrypt(ofb.encrypt(text)))
+    print('--CBC Cipher--')
+    print('not implemented')
+    print('--CNTR Cipher--')
+    print('not implemented')

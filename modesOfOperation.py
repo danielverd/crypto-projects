@@ -113,22 +113,91 @@ class CBCCipher():
     def __init__(self,aes):
         self.aes = AES(bytes(key,'utf-8'))
     
-    def encrypt(self):
-        pass
+    def encrypt(self,plaintext):
+        plaintext = pkcsPadding(True,plaintext)
 
-    def decrypt(self):
-        pass
+        plaintext = blocks(plaintext,BLOCK_SIZE)
+        ciphertext = []
+        iv = os.urandom(16)
+        ciphertext.append(iv)
+        interim = iv
+
+        for block in plaintext:
+            int_temp = int.from_bytes(interim,'little')
+            int_block = int.from_bytes(block,'little')
+            int_enc = int_temp ^ int_block
+
+            interim = self.aes.encrypt_block(int_enc.to_bytes(BLOCK_SIZE,'little'))
+            ciphertext.append(interim)
+        return ciphertext
+
+    def decrypt(self,ciphertext):
+        ciphertext = blocks(ciphertext,BLOCK_SIZE)
+        ciphertext = list(ciphertext)[0]
+        plaintext = []
+        interim = ciphertext[0]
+
+        for block in ciphertext[1:]:
+            temp = interim
+            interim = block
+            decrypted = self.aes.decrypt_block(block)
+
+            int_temp = int.from_bytes(temp,'little')
+            int_decr = int.from_bytes(decrypted,'little')
+            int_enc = int_temp ^ int_decr
+            plaintext.append(int_enc.to_bytes(BLOCK_SIZE,'little'))
+        
+        plaintext = delist(plaintext)
+        plaintext = pkcsPadding(False,plaintext)
+        return plaintext
 
 class CNTRCipher():
 
     def __init__(self,aes):
         self.aes = AES(bytes(key,'utf-8'))
     
-    def encrypt(self):
-        pass
+    def encrypt(self,plaintext):
+        plaintext = pkcsPadding(True,plaintext)
 
-    def decrypt(self):
-        pass
+        plaintext = blocks(plaintext,BLOCK_SIZE)
+        ciphertext = []
+        i = 0
+        iv = os.urandom(16)
+        ciphertext.append(iv)
+
+        ivInt = int.from_bytes(iv,'little')
+        for block in plaintext:
+            interim = ivInt + i
+            temp = self.aes.encrypt_block(interim.to_bytes(BLOCK_SIZE,'little'))
+            int_temp = int.from_bytes(temp,'little')
+            int_block = int.from_bytes(block,'little')
+            int_enc = int_temp ^ int_block
+
+            ciphertext.append(int_enc.to_bytes(BLOCK_SIZE,'little'))
+            i += 1
+        return ciphertext
+
+    def decrypt(self,ciphertext):
+        ciphertext = blocks(ciphertext,BLOCK_SIZE)
+        ciphertext = list(ciphertext)[0]
+        plaintext = []
+        i = 0
+        iv = ciphertext[0]
+
+        ivInt = int.from_bytes(iv,'little')
+        for block in ciphertext[1:]:
+            interim = ivInt + i
+            temp = self.aes.encrypt_block(interim.to_bytes(BLOCK_SIZE,'little'))
+            int_temp = int.from_bytes(temp,'little')
+            int_block = int.from_bytes(block,'little')
+            int_enc = int_temp ^ int_block
+
+            plaintext.append(int_enc.to_bytes(BLOCK_SIZE,'little'))
+            i += 1
+        
+        plaintext = delist(plaintext)
+        plaintext = pkcsPadding(False,plaintext)
+        return plaintext
 
 if __name__ == "__main__":
     key = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15'
@@ -136,8 +205,8 @@ if __name__ == "__main__":
 
     ecb = ECBCipher(key)
     ofb = OFBCipher(key)
-    #cbc = CBCCipher(key)
-    #cntr = CNTRCipher(key)
+    cbc = CBCCipher(key)
+    cntr = CNTRCipher(key)
 
     print('-----Object Tests-----')
     print('--ECB Cipher--')
@@ -145,6 +214,6 @@ if __name__ == "__main__":
     print('--OFB Cipher--')
     print(text == ofb.decrypt(ofb.encrypt(text)))
     print('--CBC Cipher--')
-    print('not implemented')
+    print(text == cbc.decrypt(cbc.encrypt(text)))
     print('--CNTR Cipher--')
-    print('not implemented')
+    print(text == cntr.decrypt(cntr.encrypt(text)))

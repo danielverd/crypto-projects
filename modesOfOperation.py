@@ -69,7 +69,7 @@ class ECBCipher():
 
 class OFBCipher():
 
-    def __init__(self,aes):
+    def __init__(self,key):
         self.aes = AES(bytes(key,'utf-8'))
     
     def encrypt(self,plaintext):
@@ -110,7 +110,7 @@ class OFBCipher():
 
 class CBCCipher():
 
-    def __init__(self,aes):
+    def __init__(self,key):
         self.aes = AES(bytes(key,'utf-8'))
     
     def encrypt(self,plaintext):
@@ -153,7 +153,7 @@ class CBCCipher():
 
 class CNTRCipher():
 
-    def __init__(self,aes):
+    def __init__(self,key):
         self.aes = AES(bytes(key,'utf-8'))
     
     def encrypt(self,plaintext):

@@ -88,11 +88,12 @@ class OFBCipher():
 
             ciphertext.append(int_enc.to_bytes(BLOCK_SIZE,'little'))
             interim = self.aes.encrypt_block(interim)
+        ciphertext = delist(ciphertext)
         return ciphertext
 
     def decrypt(self,ciphertext):
         ciphertext = blocks(ciphertext,BLOCK_SIZE)
-        ciphertext = list(ciphertext)[0]
+        ciphertext = list(ciphertext)
         plaintext = []
         interim = self.aes.encrypt_block(ciphertext[0])
 
@@ -129,11 +130,12 @@ class CBCCipher():
 
             interim = self.aes.encrypt_block(int_enc.to_bytes(BLOCK_SIZE,'little'))
             ciphertext.append(interim)
+        ciphertext = delist(ciphertext)
         return ciphertext
 
     def decrypt(self,ciphertext):
         ciphertext = blocks(ciphertext,BLOCK_SIZE)
-        ciphertext = list(ciphertext)[0]
+        ciphertext = list(ciphertext)
         plaintext = []
         interim = ciphertext[0]
 
@@ -175,11 +177,12 @@ class CNTRCipher():
 
             ciphertext.append(int_enc.to_bytes(BLOCK_SIZE,'little'))
             i += 1
+        ciphertext = delist(ciphertext)
         return ciphertext
 
     def decrypt(self,ciphertext):
         ciphertext = blocks(ciphertext,BLOCK_SIZE)
-        ciphertext = list(ciphertext)[0]
+        ciphertext = list(ciphertext)
         plaintext = []
         i = 0
         iv = ciphertext[0]
@@ -217,3 +220,9 @@ if __name__ == "__main__":
     print(text == cbc.decrypt(cbc.encrypt(text)))
     print('--CNTR Cipher--')
     print(text == cntr.decrypt(cntr.encrypt(text)))
+
+    print('-----Padding Oracle Test-----')
+    truePad = cbc.encrypt(text)
+    truePad[-1] = 72
+    print('--Should Return False--')
+    print(cbc.decrypt(truePad))

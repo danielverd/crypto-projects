@@ -27,7 +27,7 @@ cbcPaddingAttack.py - a standalone script that simulates the padding oracle atta
 
 By systematically changing bytes in an encrypted message, the attack can find where the message padding begins. This leaks the length of the message. Then, the attack changes an entire block to simulate a padding of length $n+1$, where n is the actual padding of the message. By finding which delta changes the message into a form that passes the padding check, the attack can reverse-engineer the final byte of the message. Repeat this process until the message is broken. The attack is contained in one function: 
 
-    attack(cbc,ciphertext) -  decrypts the ciphertext without using the cbc.decrypt() function
+    attack(cbc,ciphertext) -  decrypts the ciphertext without using the cbc.decrypt() function, returns the text of the plaintext message as a bytearray
 
 \
 
